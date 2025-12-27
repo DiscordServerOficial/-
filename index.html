@@ -15,7 +15,6 @@ body {
     height: 100vh;
     margin: 0;
 }
-
 .box {
     background: #3a3a3a;
     padding: 25px;
@@ -23,31 +22,22 @@ body {
     width: 90%;
     max-width: 350px;
     text-align: center;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
-
-input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    margin-bottom: 15px;
-    font-size: 16px;
-}
-
-button {
+input, button {
     width: 100%;
     padding: 12px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+button {
     background: #4caf50;
     color: white;
-    font-size: 16px;
-    border: none;
-    border-radius: 8px;
 }
-
 #votos {
-    margin-top: 15px;
     font-weight: bold;
+    margin-top: 10px;
 }
 </style>
 </head>
@@ -56,41 +46,57 @@ button {
 
 <div class="box">
     <h2>🟩 Squad Minecraft</h2>
-    <p>Vote no Squad</p>
-
     <input id="nick" placeholder="[ Seu apelido ]">
     <button onclick="votar()">Votar</button>
-
-    <div id="votos"></div>
+    <div id="votos">Carregando...</div>
 </div>
 
-<script>
-let votos = Number(localStorage.getItem("votosSquad")) || 0;
-let ultimoVoto = localStorage.getItem("ultimoVoto") || "";
+<!-- FIREBASE v8 (FUNCIONA NO GITHUB) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-document.getElementById("votos").innerText = "Votos: " + votos;
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyBRo7FswrF_l0Bw2jvj5KAtkLB13jagqKY",
+  authDomain: "squad-74bd8.firebaseapp.com",
+  databaseURL: "https://squad-74bd8-default-rtdb.firebaseio.com",
+  projectId: "squad-74bd8",
+  storageBucket: "squad-74bd8.appspot.com",
+  messagingSenderId: "290173918460",
+  appId: "1:290173918460:web:c41bcf45f19f61025e4b79"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+var db = firebase.database();
+var votosRef = db.ref("votos/squad");
+
+// MOSTRAR VOTOS EM TEMPO REAL (GLOBAL)
+votosRef.on("value", function(snapshot) {
+    var total = snapshot.val() || 0;
+    document.getElementById("votos").innerText = "Votos: " + total;
+});
 
 function votar() {
-    const nick = document.getElementById("nick").value.trim();
+    var nick = document.getElementById("nick").value.trim();
     if (!nick) {
         alert("Digite seu apelido!");
         return;
     }
 
-    const hoje = new Date().toDateString();
+    var hoje = new Date().toDateString();
+    var ultimo = localStorage.getItem("ultimoVoto");
 
-    if (ultimoVoto === hoje) {
+    if (ultimo === hoje) {
         alert("❌ Você já votou hoje!");
         return;
     }
 
-    votos++;
-    ultimoVoto = hoje;
+    votosRef.transaction(function(atual) {
+        return (atual || 0) + 1;
+    });
 
-    localStorage.setItem("votosSquad", votos);
     localStorage.setItem("ultimoVoto", hoje);
-
-    document.getElementById("votos").innerText = "Votos: " + votos;
     alert("✅ Obrigado por votar, " + nick + "!");
 }
 </script>
