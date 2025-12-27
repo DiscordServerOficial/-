@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Squad - Vote</title>
+
+<style>
+body {
+    background: #2e2e2e;
+    font-family: Arial, sans-serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.box {
+    background: #3a3a3a;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 350px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: #4caf50;
+    color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+}
+
+#votos {
+    margin-top: 15px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+    <h2>🟩 Squad Minecraft</h2>
+    <p>Vote no Squad</p>
+
+    <input id="nick" placeholder="[ Seu apelido ]">
+    <button onclick="votar()">Votar</button>
+
+    <div id="votos"></div>
+</div>
+
+<script>
+let votos = Number(localStorage.getItem("votosSquad")) || 0;
+let ultimoVoto = localStorage.getItem("ultimoVoto") || "";
+
+document.getElementById("votos").innerText = "Votos: " + votos;
+
+function votar() {
+    const nick = document.getElementById("nick").value.trim();
+    if (!nick) {
+        alert("Digite seu apelido!");
+        return;
+    }
+
+    const hoje = new Date().toDateString();
+
+    if (ultimoVoto === hoje) {
+        alert("❌ Você já votou hoje!");
+        return;
+    }
+
+    votos++;
+    ultimoVoto = hoje;
+
+    localStorage.setItem("votosSquad", votos);
+    localStorage.setItem("ultimoVoto", hoje);
+
+    document.getElementById("votos").innerText = "Votos: " + votos;
+    alert("✅ Obrigado por votar, " + nick + "!");
+}
+</script>
+
+</body>
+</html>
