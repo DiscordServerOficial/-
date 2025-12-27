@@ -15,6 +15,7 @@ body {
     height: 100vh;
     margin: 0;
 }
+
 .box {
     background: #3a3a3a;
     padding: 25px;
@@ -22,22 +23,38 @@ body {
     width: 90%;
     max-width: 350px;
     text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
-input, button {
+
+input {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border-radius: 8px;
     border: none;
     margin-bottom: 10px;
     font-size: 16px;
 }
+
 button {
+    width: 100%;
+    padding: 12px;
     background: #4caf50;
     color: white;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
 }
+
 #votos {
-    font-weight: bold;
     margin-top: 10px;
+    font-weight: bold;
+}
+
+#lista {
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: left;
 }
 </style>
 </head>
@@ -46,16 +63,21 @@ button {
 
 <div class="box">
     <h2>🟩 Squad Minecraft</h2>
+    <p>Vote no Squad</p>
+
     <input id="nick" placeholder="[ Seu apelido ]">
     <button onclick="votar()">Votar</button>
-    <div id="votos">Carregando...</div>
+
+    <div id="votos">Votos: 0</div>
+    <div id="lista"></div>
 </div>
 
-<!-- FIREBASE v8 (FUNCIONA NO GITHUB) -->
+<!-- 🔥 FIREBASE (OBRIGATÓRIO) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+/* 🔥 CONFIG FIREBASE */
 var firebaseConfig = {
   apiKey: "AIzaSyBRo7FswrF_l0Bw2jvj5KAtkLB13jagqKY",
   authDomain: "squad-74bd8.firebaseapp.com",
@@ -63,41 +85,62 @@ var firebaseConfig = {
   projectId: "squad-74bd8",
   storageBucket: "squad-74bd8.appspot.com",
   messagingSenderId: "290173918460",
-  appId: "1:290173918460:web:c41bcf45f19f61025e4b79"
+  appId: "1:290173918460:web:e96c1859c9911e175e4b79"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 var db = firebase.database();
-var votosRef = db.ref("votos/squad");
 
-// MOSTRAR VOTOS EM TEMPO REAL (GLOBAL)
-votosRef.on("value", function(snapshot) {
-    var total = snapshot.val() || 0;
-    document.getElementById("votos").innerText = "Votos: " + total;
+/* 🆔 ID ÚNICO DO DISPOSITIVO */
+let deviceId = localStorage.getItem("deviceId");
+if (!deviceId) {
+    deviceId = "dev-" + Math.random().toString(36).substr(2, 16);
+    localStorage.setItem("deviceId", deviceId);
+}
+
+/* 📊 VOTOS EM TEMPO REAL */
+db.ref("votos/total").on("value", snap => {
+    document.getElementById("votos").innerText =
+        "Votos: " + (snap.val() || 0);
 });
 
+/* 👥 LISTA DE NOMES */
+db.ref("votos/nomes").on("value", snap => {
+    let html = "<b>Quem já votou:</b><br>";
+    snap.forEach(child => {
+        html += "• " + child.val().nick + "<br>";
+    });
+    document.getElementById("lista").innerHTML = html;
+});
+
+/* 🗳️ VOTAR */
 function votar() {
-    var nick = document.getElementById("nick").value.trim();
+    const nick = document.getElementById("nick").value.trim();
     if (!nick) {
         alert("Digite seu apelido!");
         return;
     }
 
-    var hoje = new Date().toDateString();
-    var ultimo = localStorage.getItem("ultimoVoto");
+    const hoje = new Date().toDateString();
+    const refDevice = db.ref("votos/devices/" + deviceId);
 
-    if (ultimo === hoje) {
-        alert("❌ Você já votou hoje!");
-        return;
-    }
+    refDevice.once("value").then(snap => {
+        if (snap.exists() && snap.val() === hoje) {
+            alert("❌ Você já votou hoje neste dispositivo!");
+            return;
+        }
 
-    votosRef.transaction(function(atual) {
-        return (atual || 0) + 1;
+        refDevice.set(hoje);
+
+        db.ref("votos/nomes/" + deviceId).set({
+            nick: nick,
+            data: hoje
+        });
+
+        db.ref("votos/total").transaction(v => (v || 0) + 1);
+
+        alert("✅ Voto computado!");
     });
-
-    localStorage.setItem("ultimoVoto", hoje);
-    alert("✅ Obrigado por votar, " + nick + "!");
 }
 </script>
 
